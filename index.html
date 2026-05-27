@@ -68,9 +68,10 @@ body {
   padding-top: max(48px, env(safe-area-inset-top));
 }
 .header-row {
+  position: relative;
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
   margin-bottom: 8px;
 }
 h1 {
@@ -79,6 +80,8 @@ h1 {
   color: var(--text);
 }
 .theme-toggle {
+  position: absolute;
+  right: 0;
   background: var(--toggle-bg);
   border: 1px solid var(--toggle-border);
   border-radius: 8px;
@@ -243,8 +246,9 @@ h1 {
 }
 .footer-note {
   text-align: center;
-  color: var(--text-tertiary);
-  font-size: 11px;
+  color: #2e5acc;
+  font-size: 16px;
+  font-style: italic;
   margin-top: 24px;
   opacity: 0.6;
 }
@@ -447,6 +451,9 @@ function render() {
     input.placeholder = '0';
     input.value = data.hours[day] !== undefined ? data.hours[day] : '';
     input.addEventListener('input', () => {
+      let v = input.value;
+      if (v.startsWith('.')) v = '0' + v;
+      if (v !== input.value) input.value = v;
       data.hours[day] = input.value;
       saveData(data);
       updateTotal();
