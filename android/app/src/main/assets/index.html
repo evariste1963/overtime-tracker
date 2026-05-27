@@ -24,11 +24,12 @@
   --text-label: #ccc;
   --btn-primary: #333;
   --btn-secondary: #222;
-  --btn-text: #eee;
+  --btn-text: #AAA;
   --btn-text-secondary: #ccc;
   --accent: #888;
   --toggle-bg: #1a1a1a;
   --toggle-border: #333;
+  --accent-blue: #2E5ACC;
 }
 
 .light {
@@ -49,6 +50,7 @@
   --accent: #666;
   --toggle-bg: #e0e0e0;
   --toggle-border: #ccc;
+  --accent-blue: #2E5ACC;
 }
 
 body {
@@ -77,7 +79,7 @@ body {
 h1 {
   font-size: 22px;
   font-weight: 700;
-  color: var(--text);
+  color: var(--accent-blue);
 }
 .theme-toggle {
   position: absolute;
@@ -96,7 +98,7 @@ h1 {
 .week-label {
   text-align: center;
   color: var(--text-secondary);
-  font-size: 13px;
+  font-size: 14px;
   margin-bottom: 12px;
 }
 .day-row {
@@ -165,6 +167,9 @@ h1 {
   opacity: 0.5;
   transition: background 0.3s, color 0.3s;
 }
+.no-lunch-cb:checked ~ span {
+  color: var(--accent-blue);
+}
 .day-input-wrap input[type=number]::-webkit-inner-spin-button,
 .day-input-wrap input[type=number]::-webkit-outer-spin-button {
   -webkit-appearance: none;
@@ -218,8 +223,8 @@ h1 {
   font-size: 16px;
   transition: background 0.3s;
 }
-.finish-label { font-size: 14px; }
-.finish-value { font-size: 18px; }
+.finish-label { font-size: 16px; }
+.finish-value { font-size: 20px; }
 .actions {
   display: flex;
   gap: 10px;
@@ -241,12 +246,12 @@ h1 {
   color: var(--btn-text);
 }
 .btn-clear-week {
-  background: var(--btn-secondary);
-  color: var(--btn-text-secondary);
+  background: var(--btn-primary);
+  color: var(--btn-text);
 }
 .footer-note {
   text-align: center;
-  color: #2e5acc;
+  color: var(--accent-blue);
   font-size: 16px;
   font-style: italic;
   margin-top: 24px;
@@ -289,7 +294,7 @@ h1 {
 </div>
 
 <script>
-const DAYS = ['Extras', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
+const DAYS = ['Banked', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
 const STORAGE_KEY = 'ot_tracker';
 const THEME_KEY = 'ot_theme';
 
@@ -429,7 +434,9 @@ function render() {
         updateActualFinish();
       });
       cbLabel.appendChild(cb);
-      cbLabel.appendChild(document.createTextNode('No-lunch'));
+      const labelSpan = document.createElement('span');
+      labelSpan.textContent = 'No-lunch';
+      cbLabel.appendChild(labelSpan);
       wrap.appendChild(cbLabel);
 
       const display = document.createElement('input');
