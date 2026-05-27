@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#000000" id="themeMeta">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="manifest.json">
+<title>Overtime Tracker</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #000;
+  --card: #1a1a1a;
+  --input-bg: #222;
+  --total-bg: #2a2a2a;
+  --finish-bg: #333;
+  --border: #333;
+  --text: #eee;
+  --text-secondary: #666;
+  --text-tertiary: #888;
+  --text-label: #ccc;
+  --btn-primary: #333;
+  --btn-secondary: #222;
+  --btn-text: #eee;
+  --btn-text-secondary: #ccc;
+  --accent: #888;
+  --toggle-bg: #1a1a1a;
+  --toggle-border: #333;
+}
+
+.light {
+  --bg: #fff;
+  --card: #f0f0f0;
+  --input-bg: #e8e8e8;
+  --total-bg: #e0e0e0;
+  --finish-bg: #d4d4d4;
+  --border: #ccc;
+  --text: #111;
+  --text-secondary: #888;
+  --text-tertiary: #999;
+  --text-label: #555;
+  --btn-primary: #ccc;
+  --btn-secondary: #ddd;
+  --btn-text: #111;
+  --btn-text-secondary: #333;
+  --accent: #666;
+  --toggle-bg: #e0e0e0;
+  --toggle-border: #ccc;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  justify-content: center;
+  padding: 16px;
+  transition: background 0.3s, color 0.3s;
+}
+.container {
+  width: 100%;
+  max-width: 420px;
+  padding-top: max(48px, env(safe-area-inset-top));
+}
+.header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+h1 {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text);
+}
+.theme-toggle {
+  background: var(--toggle-bg);
+  border: 1px solid var(--toggle-border);
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 16px;
+  cursor: pointer;
+  color: var(--text);
+  transition: background 0.2s;
+  line-height: 1;
+}
+.theme-toggle:active { opacity: 0.7; }
+.week-label {
+  text-align: center;
+  color: var(--text-secondary);
+  font-size: 13px;
+  margin-bottom: 12px;
+}
+.day-row {
+  display: flex;
+  align-items: center;
+  background: var(--card);
+  border-radius: 12px;
+  padding: 14px 18px;
+  margin-bottom: 10px;
+  transition: background 0.3s;
+}
+.day-name {
+  width: 52px;
+  font-weight: 600;
+  font-size: 15px;
+  color: var(--text-label);
+}
+.day-input-wrap {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+}
+.day-input-wrap input[type=number] {
+  width: 80px;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--input-bg);
+  color: var(--text);
+  font-size: 16px;
+  text-align: center;
+  outline: none;
+  transition: border-color 0.2s, background 0.3s, color 0.3s;
+}
+.day-input-wrap input[type=number]:focus {
+  border-color: var(--accent);
+}
+.no-lunch-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  margin-right: 6px;
+  white-space: nowrap;
+}
+.no-lunch-cb {
+  width: 20px;
+  height: 20px;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+.no-lunch-display {
+  width: 80px;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--input-bg);
+  color: var(--text);
+  font-size: 16px;
+  text-align: center;
+  outline: none;
+  opacity: 0.5;
+  transition: background 0.3s, color 0.3s;
+}
+.day-input-wrap input[type=number]::-webkit-inner-spin-button,
+.day-input-wrap input[type=number]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.day-input-wrap input[type=number] {
+  -moz-appearance: textfield;
+}
+.day-input-wrap input[type=time] {
+  width: 100px;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--input-bg);
+  color: var(--text);
+  font-size: 16px;
+  text-align: center;
+  outline: none;
+  transition: border-color 0.2s, background 0.3s, color 0.3s;
+}
+.day-input-wrap input[type=time]:focus {
+  border-color: var(--accent);
+}
+.hours-unit {
+  color: var(--text-secondary);
+  font-size: 13px;
+  width: 24px;
+}
+.sum-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--total-bg);
+  border-radius: 12px;
+  padding: 16px 18px;
+  margin-top: 8px;
+  font-weight: 700;
+  font-size: 18px;
+  transition: background 0.3s;
+}
+.sum-label { font-size: 15px; }
+.finish-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--finish-bg);
+  border-radius: 12px;
+  padding: 14px 18px;
+  margin-top: 8px;
+  font-weight: 600;
+  font-size: 16px;
+  transition: background 0.3s;
+}
+.finish-label { font-size: 14px; }
+.finish-value { font-size: 18px; }
+.actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 16px;
+}
+.actions button {
+  flex: 1;
+  padding: 12px;
+  border: none;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.2s, background 0.3s, color 0.3s;
+}
+.actions button:active { opacity: 0.7; }
+.btn-reset {
+  background: var(--btn-primary);
+  color: var(--btn-text);
+}
+.btn-clear-week {
+  background: var(--btn-secondary);
+  color: var(--btn-text-secondary);
+}
+.footer-note {
+  text-align: center;
+  color: var(--text-tertiary);
+  font-size: 11px;
+  margin-top: 24px;
+  opacity: 0.6;
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header-row">
+    <h1>Overtime Tracker</h1>
+    <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()">☀</button>
+  </div>
+  <div class="week-label" id="weekLabel"></div>
+
+  <div id="daysContainer"></div>
+
+  <div class="sum-row">
+    <span class="sum-label">Total</span>
+    <span id="totalHours">0.00 h</span>
+  </div>
+
+  <div id="finishRow" class="day-row" style="margin-top:10px">
+    <div class="day-name" style="width:auto;flex:1">Week Finish</div>
+    <div class="day-input-wrap">
+      <input type="time" id="fridayFinish">
+    </div>
+  </div>
+
+  <div id="actualFinishRow" class="finish-row">
+    <span class="finish-label">Actual Finish</span>
+    <span class="finish-value" id="actualFinish">--:--</span>
+  </div>
+
+  <div class="actions">
+    <button class="btn-reset" onclick="resetAll()">Reset All</button>
+    <button class="btn-clear-week" onclick="clearWeek()">Clear Week</button>
+  </div>
+  <div class="footer-note">developed by this.me</div>
+</div>
+
+<script>
+const DAYS = ['Extras', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
+const STORAGE_KEY = 'ot_tracker';
+const THEME_KEY = 'ot_theme';
+
+function getWeekId() {
+  const now = new Date();
+  const start = new Date(now);
+  start.setDate(now.getDate() - now.getDay() + 1);
+  const y = start.getFullYear();
+  const m = String(start.getMonth() + 1).padStart(2, '0');
+  const d = String(start.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
+
+function getWeekNumber(date) {
+  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+  const dayNum = d.getUTCDay() || 7;
+  d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+  return Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+}
+
+function loadData() {
+  const raw = localStorage.getItem(STORAGE_KEY);
+  if (!raw) return null;
+  try { return JSON.parse(raw); } catch { return null; }
+}
+
+function saveData(data) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+}
+
+function getDefaultData() {
+  const weekId = getWeekId();
+  const hours = {};
+  DAYS.forEach(d => hours[d] = '');
+  return { weekId, hours, fridayFinish: '17:00', noLunch: false };
+}
+
+function timeToMinutes(t) {
+  if (!t || !t.includes(':')) return NaN;
+  const [h, m] = t.split(':').map(Number);
+  return h * 60 + m;
+}
+
+function minutesToTime(mins) {
+  const h = Math.floor(mins / 60);
+  const m = Math.round(mins % 60);
+  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+}
+
+function updateActualFinish() {
+  const data = loadData();
+  if (!data) return;
+  const total = getTotalMinutes(data);
+  const finishStr = data.fridayFinish || '';
+  const finishMins = timeToMinutes(finishStr);
+  if (isNaN(finishMins)) {
+    document.getElementById('actualFinish').textContent = '--:--';
+    return;
+  }
+  const actual = finishMins - total;
+  document.getElementById('actualFinish').textContent = minutesToTime(actual);
+}
+
+function getTotalMinutes(data) {
+  let total = 0;
+  DAYS.forEach(day => {
+    const v = parseFloat(data.hours[day]);
+    if (!isNaN(v)) total += v;
+  });
+  if (data.noLunch) total += 0.5;
+  return total * 60;
+}
+
+function toggleTheme() {
+  const el = document.documentElement;
+  el.classList.toggle('light');
+  const isLight = el.classList.contains('light');
+  localStorage.setItem(THEME_KEY, isLight ? 'light' : 'dark');
+  document.getElementById('themeToggle').textContent = isLight ? '🌙' : '☀';
+  document.getElementById('themeMeta').content = isLight ? '#ffffff' : '#000000';
+}
+
+function applyTheme() {
+  const saved = localStorage.getItem(THEME_KEY);
+  const el = document.documentElement;
+  if (saved === 'light') {
+    el.classList.add('light');
+    document.getElementById('themeToggle').textContent = '🌙';
+    document.getElementById('themeMeta').content = '#ffffff';
+  } else {
+    el.classList.remove('light');
+    document.getElementById('themeToggle').textContent = '☀';
+    document.getElementById('themeMeta').content = '#000000';
+  }
+}
+
+function render() {
+  let data = loadData();
+  const currentWeek = getWeekId();
+
+  if (!data || data.weekId !== currentWeek) {
+    data = getDefaultData();
+    saveData(data);
+  }
+
+  const wn = getWeekNumber(new Date());
+  document.getElementById('weekLabel').textContent =
+    `Week ${wn} — ${data.weekId}`;
+
+  const container = document.getElementById('daysContainer');
+  container.innerHTML = '';
+
+  DAYS.forEach(day => {
+    const row = document.createElement('div');
+    row.className = 'day-row';
+
+    const name = document.createElement('div');
+    name.className = 'day-name';
+    name.textContent = day;
+    row.appendChild(name);
+
+    const wrap = document.createElement('div');
+    wrap.className = 'day-input-wrap';
+
+    if (day === 'Fri') {
+      const cbLabel = document.createElement('label');
+      cbLabel.className = 'no-lunch-label';
+      const cb = document.createElement('input');
+      cb.type = 'checkbox';
+      cb.className = 'no-lunch-cb';
+      cb.checked = !!data.noLunch;
+      cb.addEventListener('change', () => {
+        data.noLunch = cb.checked;
+        saveData(data);
+        updateTotal();
+        updateActualFinish();
+      });
+      cbLabel.appendChild(cb);
+      cbLabel.appendChild(document.createTextNode('No-lunch'));
+      wrap.appendChild(cbLabel);
+
+      const display = document.createElement('input');
+      display.type = 'text';
+      display.className = 'no-lunch-display';
+      display.readOnly = true;
+      display.value = data.noLunch ? '0.5' : '';
+      const updateDisplay = () => {
+        display.value = data.noLunch ? '0.5' : '';
+      };
+      cb.addEventListener('change', updateDisplay);
+      wrap.appendChild(display);
+    }
+
+    const input = document.createElement('input');
+    input.type = 'number';
+    input.step = '0.25';
+    input.min = '0';
+    input.placeholder = '0';
+    input.value = data.hours[day] !== undefined ? data.hours[day] : '';
+    input.addEventListener('input', () => {
+      data.hours[day] = input.value;
+      saveData(data);
+      updateTotal();
+      updateActualFinish();
+    });
+
+    const unit = document.createElement('span');
+    unit.className = 'hours-unit';
+    unit.textContent = 'h';
+
+    wrap.appendChild(input);
+    wrap.appendChild(unit);
+    row.appendChild(wrap);
+    container.appendChild(row);
+  });
+
+  const ff = document.getElementById('fridayFinish');
+  ff.value = data.fridayFinish || '17:00';
+  ff.addEventListener('change', () => {
+    data.fridayFinish = ff.value;
+    saveData(data);
+    updateActualFinish();
+  });
+
+  updateTotal();
+  updateActualFinish();
+}
+
+function updateTotal() {
+  const data = loadData();
+  if (!data) return;
+  let total = 0;
+  DAYS.forEach(day => {
+    const v = parseFloat(data.hours[day]);
+    if (!isNaN(v)) total += v;
+  });
+  if (data.noLunch) total += 0.5;
+  document.getElementById('totalHours').textContent = total.toFixed(2) + ' h';
+}
+
+function resetAll() {
+  if (!confirm('Reset everything to defaults?')) return;
+  const data = getDefaultData();
+  saveData(data);
+  render();
+}
+
+function clearWeek() {
+  if (!confirm('Clear hours, keep finish time?')) return;
+  const data = loadData();
+  if (!data) return;
+  DAYS.forEach(d => data.hours[d] = '');
+  data.noLunch = false;
+  saveData(data);
+  render();
+}
+
+applyTheme();
+render();
+
+if ('serviceWorker' in navigator) {
+  try {
+    navigator.serviceWorker.register('/sw.js');
+  } catch (_) {}
+}
+</script>
+</body>
+</html>

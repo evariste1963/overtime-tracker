@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Outer clock ring -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M54,26m-22,0a22,22 0 1,1 44,0a22,22 0 1,1 -44,0" />
+    <!-- Clock face cutout -->
+    <path
+        android:fillColor="@color/ic_launcher_background"
+        android:pathData="M54,29m-19,0a19,19 0 1,1 38,0a19,19 0 1,1 -38,0" />
+    <!-- Hour hand (shorter, pointing ~2 o'clock) -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M54,34L56,48L54,51L52,48Z" />
+    <!-- Minute hand (longer, pointing ~10 o'clock) -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M50,36L46,40L48,43L54,51L54,48Z" />
+    <!-- Center dot -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M52,50a2,2 0 1,1 4,0a2,2 0 1,1 -4,0" />
+</vector>
