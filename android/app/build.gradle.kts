@@ -17,17 +17,23 @@ android {
 
     signingConfigs {
         create("release") {
-            storeFile = file("../release.keystore")
-            storePassword = "android"
-            keyAlias = "overtime"
-            keyPassword = "android"
+            val store = findProperty("OvertimeStoreFile")?.toString()
+            if (store != null) {
+                storeFile = file(store)
+                storePassword = findProperty("OvertimeStorePassword")?.toString()
+                keyAlias = findProperty("OvertimeKeyAlias")?.toString()
+                keyPassword = findProperty("OvertimeKeyPassword")?.toString()
+            }
         }
     }
 
     buildTypes {
         release {
             isMinifyEnabled = false
-            signingConfig = signingConfigs.getByName("release")
+            val s = signingConfigs.getByName("release")
+            if (s.storeFile != null) {
+                signingConfig = s
+            }
         }
     }
 

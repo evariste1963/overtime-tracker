@@ -4,6 +4,7 @@ local.properties
 app/build/
 .gradle/
 *.apk
+*.keystore
 .idea/
 *.iml
 .DS_Store

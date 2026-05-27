@@ -1,3 +1,13 @@
+# Setup on new machine (one time):
+#   1. Copy keystore to ~/.android/overtime-keystore.jks
+#   2. Create ~/.gradle/gradle.properties with:
+#        OvertimeStoreFile=/home/USER/.android/overtime-keystore.jks
+#        OvertimeStorePassword=android
+#        OvertimeKeyAlias=overtime
+#        OvertimeKeyPassword=android
+#   3. make build   (debug, no keystore needed)
+#      make release (release, requires keystore)
+
 ASSETS = app/src/main/assets
 WEB_FILES = ../index.html ../manifest.json ../sw.js
 APK_DEBUG = app/build/outputs/apk/debug/app-debug.apk
