@@ -91,7 +91,7 @@ h1 {
   font-size: 16px;
   cursor: pointer;
   color: var(--text);
-  transition: background 0.2s;
+  transition: background 0.5s;
   line-height: 1;
 }
 .theme-toggle:active { opacity: 0.7; }
@@ -108,7 +108,7 @@ h1 {
   border-radius: 12px;
   padding: 14px 18px;
   margin-bottom: 10px;
-  transition: background 0.3s;
+  transition: background 0.5s;
 }
 .day-name {
   width: 52px;
@@ -427,8 +427,14 @@ function render() {
       cb.type = 'checkbox';
       cb.className = 'no-lunch-cb';
       cb.checked = !!data.noLunch;
+      const display = document.createElement('input');
+      display.type = 'text';
+      display.className = 'no-lunch-display';
+      display.readOnly = true;
+      display.value = data.noLunch ? '0.5' : '';
       cb.addEventListener('change', () => {
         data.noLunch = cb.checked;
+        display.value = data.noLunch ? '0.5' : '';
         saveData(data);
         updateTotal();
         updateActualFinish();
@@ -438,16 +444,6 @@ function render() {
       labelSpan.textContent = 'No-lunch';
       cbLabel.appendChild(labelSpan);
       wrap.appendChild(cbLabel);
-
-      const display = document.createElement('input');
-      display.type = 'text';
-      display.className = 'no-lunch-display';
-      display.readOnly = true;
-      display.value = data.noLunch ? '0.5' : '';
-      const updateDisplay = () => {
-        display.value = data.noLunch ? '0.5' : '';
-      };
-      cb.addEventListener('change', updateDisplay);
       wrap.appendChild(display);
     }
 
@@ -492,13 +488,7 @@ function render() {
 function updateTotal() {
   const data = loadData();
   if (!data) return;
-  let total = 0;
-  DAYS.forEach(day => {
-    const v = parseFloat(data.hours[day]);
-    if (!isNaN(v)) total += v;
-  });
-  if (data.noLunch) total += 0.5;
-  document.getElementById('totalHours').textContent = total.toFixed(2) + ' h';
+  document.getElementById('totalHours').textContent = (getTotalMinutes(data) / 60).toFixed(2) + ' h';
 }
 
 function resetAll() {

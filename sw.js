@@ -1,5 +1,5 @@
 const CACHE = 'ot-tracker-v3';
-const URLS = ['/manifest.json'];
+const URLS = ['/', '/index.html', '/manifest.json'];
 
 self.addEventListener('install', e => {
   e.waitUntil(
