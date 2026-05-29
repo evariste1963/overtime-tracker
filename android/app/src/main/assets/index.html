@@ -18,18 +18,16 @@
   --total-bg: #2a2a2a;
   --finish-bg: #333;
   --border: #333;
-  --text: #eee;
-  --text-secondary: #666;
-  --text-tertiary: #888;
-  --text-label: #ccc;
-  --btn-primary: #333;
-  --btn-secondary: #222;
+  --text: var(--electric-teal);
+  --text-secondary: var(--electric-teal);
+  --text-label: var(--electric-teal);
   --btn-text: #AAA;
-  --btn-text-secondary: #ccc;
   --accent: #888;
   --toggle-bg: #1a1a1a;
   --toggle-border: #333;
-  --accent-blue: #2E5ACC;
+  --accent-blue: #2563eb;
+  --electric-teal: #3b82f6;
+  --text-glow: 0 0 1px var(--electric-teal), 0 0 4px var(--accent-blue), 0 0 10px var(--accent-blue);
 }
 
 .light {
@@ -41,28 +39,42 @@
   --border: #ccc;
   --text: #111;
   --text-secondary: #888;
-  --text-tertiary: #999;
   --text-label: #555;
-  --btn-primary: #ccc;
-  --btn-secondary: #ddd;
-  --btn-text: #111;
-  --btn-text-secondary: #333;
   --accent: #666;
   --toggle-bg: #e0e0e0;
   --toggle-border: #ccc;
-  --accent-blue: #2E5ACC;
+  --accent-blue: #2563eb;
+}
+
+.light body,
+.light h1,
+.light .day-name,
+.light .sum-row,
+.light .finish-row {
+  text-shadow: none;
+}
+.light .btn-share,
+.light .btn-reset {
+  color: #fff;
 }
 
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   background: var(--bg);
   color: var(--text);
+  text-shadow: var(--text-glow);
   min-height: 100vh;
   min-height: 100dvh;
   display: flex;
   justify-content: center;
   padding: 16px;
   transition: background 0.3s, color 0.3s;
+}
+h1, .day-name, #combinedRow {
+  text-shadow: 0 0 1px var(--electric-teal), 0 0 3px var(--accent-blue);
+}
+.sum-row, .finish-row {
+  text-shadow: none;
 }
 .container {
   width: 100%;
@@ -79,7 +91,7 @@ body {
 h1 {
   font-size: 22px;
   font-weight: 700;
-  color: var(--accent-blue);
+  color: var(--electric-teal);
 }
 .theme-toggle {
   position: absolute;
@@ -143,10 +155,11 @@ h1 {
   align-items: center;
   gap: 4px;
   font-size: 12px;
-  color: var(--text-tertiary);
+  color: #888;
   cursor: pointer;
   margin-right: 6px;
   white-space: nowrap;
+  text-shadow: none;
 }
 .no-lunch-cb {
   width: 20px;
@@ -168,7 +181,7 @@ h1 {
   transition: background 0.3s, color 0.3s;
 }
 .no-lunch-cb:checked ~ span {
-  color: var(--accent-blue);
+  color: var(--electric-teal);
 }
 .day-input-wrap input[type=number]::-webkit-inner-spin-button,
 .day-input-wrap input[type=number]::-webkit-outer-spin-button {
@@ -225,7 +238,7 @@ h1 {
 }
 .finish-label { font-size: 16px; }
 .finish-value { font-size: 20px; }
-.banked-positive { color: var(--accent-blue); }
+.banked-positive { color: var(--electric-teal); }
 .actions {
   display: flex;
   gap: 10px;
@@ -240,23 +253,24 @@ h1 {
   font-weight: 600;
   cursor: pointer;
   transition: opacity 0.2s, background 0.3s, color 0.3s;
+  text-shadow: none;
 }
-.actions button:active { opacity: 0.7; }
 .btn-reset {
-  background: var(--btn-primary);
+  background: var(--accent-blue);
   color: var(--btn-text);
 }
 .btn-share {
   background: var(--accent-blue);
-  color: #fff;
+  color: var(--btn-text);
 }
 .footer-note {
   text-align: center;
-  color: var(--accent-blue);
+  color: var(--electric-teal);
   font-size: 16px;
   font-style: italic;
   margin-top: 24px;
   opacity: 0.6;
+  text-shadow: 0 0 4px var(--electric-teal), 0 0 12px var(--electric-teal), 0 0 24px var(--accent-blue), 0 0 56px var(--accent-blue), 0 0 80px rgba(37,99,235,0.3);
 }
 </style>
 </head>
@@ -284,11 +298,11 @@ h1 {
 
   <div id="combinedRow" class="day-row" style="gap:12px;justify-content:space-between;">
     <div style="display:flex;align-items:center;gap:6px;">
-      <span style="font-size:13px;color:var(--text-secondary);">Earliest</span>
-      <span style="font-size:18px;font-weight:700;" id="earliestFinish">--:--</span>
+      <span style="font-size:15px;font-weight:600;color:var(--text-label);">Earliest</span>
+      <span style="font-size:15px;font-weight:600;color:var(--text-label);" id="earliestFinish">--:--</span>
     </div>
     <div style="display:flex;align-items:center;gap:6px;">
-      <span style="font-size:13px;color:var(--text-secondary);">Actual</span>
+      <span style="font-size:15px;font-weight:600;color:var(--text-label);">Actual</span>
       <input type="time" id="proposedFinish" style="width:100px;padding:6px 10px;border:1px solid var(--border);border-radius:8px;background:var(--input-bg);color:var(--text);font-size:16px;text-align:center;outline:none;">
     </div>
   </div>
@@ -519,9 +533,10 @@ function render() {
     const input = document.createElement('input');
     input.type = 'number';
     input.step = '0.25';
-    input.min = '0';
-    input.placeholder = '0';
-    input.value = data.hours[day] !== undefined ? data.hours[day] : '';
+    input.min = '0.00';
+    input.placeholder = '0.00';
+    const h = data.hours[day];
+    input.value = h !== undefined && h !== '' ? parseFloat(h).toFixed(2) : '';
     input.addEventListener('input', () => {
       let v = input.value;
       if (v.startsWith('.')) v = '0' + v;
@@ -530,6 +545,16 @@ function render() {
       saveData(data);
       updateTotal();
       updateEarliestFinish();
+    });
+    input.addEventListener('blur', () => {
+      if (input.value !== '') {
+        const f = parseFloat(input.value);
+        if (!isNaN(f)) {
+          input.value = f.toFixed(2);
+          data.hours[day] = input.value;
+          saveData(data);
+        }
+      }
     });
 
     const unit = document.createElement('span');
