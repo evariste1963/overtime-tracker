@@ -52,8 +52,8 @@ function buildEmailBody(data, wn) {
         var pMins = timeToMinutes(data.proposedFinish);
         if (!isNaN(pMins)) {
           lines.push('Actual finish:\t\t' + data.proposedFinish);
-          var diff = pMins - earliestMins;
-          lines.push('Banked:\t\t' + (diff >= 0 ? '+' : '') + minutesToTime(Math.abs(diff)));
+          var diff = (pMins - earliestMins) / 60;
+          lines.push('Banked:\t\t' + (diff >= 0 ? '+' : '') + diff.toFixed(2) + ' h');
         }
       }
     }
