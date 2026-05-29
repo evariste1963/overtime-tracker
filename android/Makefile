@@ -9,7 +9,7 @@
 #      make release (release, requires keystore)
 
 ASSETS = app/src/main/assets
-WEB_FILES = ../index.html ../manifest.json ../sw.js
+WEB_FILES = ../index.html ../manifest.json ../sw.js ../overtime-email.js
 APK_DEBUG = app/build/outputs/apk/debug/app-debug.apk
 APK_RELEASE = app/build/outputs/apk/release/app-release.apk
 

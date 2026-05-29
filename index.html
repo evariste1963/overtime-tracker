@@ -111,7 +111,7 @@ h1 {
   transition: background 0.5s;
 }
 .day-name {
-  width: 52px;
+  width: 130px;
   font-weight: 600;
   font-size: 15px;
   color: var(--text-label);
@@ -225,6 +225,7 @@ h1 {
 }
 .finish-label { font-size: 16px; }
 .finish-value { font-size: 20px; }
+.banked-positive { color: var(--accent-blue); }
 .actions {
   display: flex;
   gap: 10px;
@@ -248,6 +249,10 @@ h1 {
 .btn-clear-week {
   background: var(--btn-primary);
   color: var(--btn-text);
+}
+.btn-share {
+  background: var(--accent-blue);
+  color: #fff;
 }
 .footer-note {
   text-align: center;
@@ -281,18 +286,32 @@ h1 {
     </div>
   </div>
 
-  <div id="actualFinishRow" class="finish-row">
-    <span class="finish-label">Actual Finish</span>
-    <span class="finish-value" id="actualFinish">--:--</span>
+  <div id="earliestFinishRow" class="finish-row">
+    <span class="finish-label">Earliest Finish</span>
+    <span class="finish-value" id="earliestFinish">--:--</span>
+  </div>
+
+  <div id="proposedFinishRow" class="day-row">
+    <div class="day-name" style="width:auto;flex:1">Actual Finish</div>
+    <div class="day-input-wrap">
+      <input type="time" id="proposedFinish">
+    </div>
+  </div>
+
+  <div id="bankedRow" class="finish-row">
+    <span class="finish-label">Banked <span style="color:var(--text-secondary)">(WK <span id="bankedWeekNum"></span>)</span></span>
+    <span class="finish-value" id="bankedValue">--:--</span>
   </div>
 
   <div class="actions">
+    <button class="btn-share" onclick="shareOvertime()">Share</button>
     <button class="btn-reset" onclick="resetAll()">Reset All</button>
     <button class="btn-clear-week" onclick="clearWeek()">Clear Week</button>
   </div>
   <div class="footer-note">developed by this.me</div>
 </div>
 
+<script src="overtime-email.js"></script>
 <script>
 const DAYS = ['Banked', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
 const STORAGE_KEY = 'ot_tracker';
@@ -316,6 +335,12 @@ function getWeekNumber(date) {
   return Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
 }
 
+function getPreviousWeekNumber() {
+  const prev = new Date();
+  prev.setDate(prev.getDate() - 7);
+  return getWeekNumber(prev);
+}
+
 function loadData() {
   const raw = localStorage.getItem(STORAGE_KEY);
   if (!raw) return null;
@@ -330,7 +355,7 @@ function getDefaultData() {
   const weekId = getWeekId();
   const hours = {};
   DAYS.forEach(d => hours[d] = '');
-  return { weekId, hours, fridayFinish: '17:00', noLunch: false };
+  return { weekId, hours, fridayFinish: '17:00', proposedFinish: '17:00', noLunch: false };
 }
 
 function timeToMinutes(t) {
@@ -345,18 +370,50 @@ function minutesToTime(mins) {
   return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
 }
 
-function updateActualFinish() {
+function updateEarliestFinish() {
   const data = loadData();
   if (!data) return;
   const total = getTotalMinutes(data);
   const finishStr = data.fridayFinish || '';
   const finishMins = timeToMinutes(finishStr);
+  const el = document.getElementById('earliestFinish');
   if (isNaN(finishMins)) {
-    document.getElementById('actualFinish').textContent = '--:--';
+    el.textContent = '--:--';
+  } else {
+    el.textContent = minutesToTime(finishMins - total);
+  }
+  updateBanked();
+}
+
+function updateBanked() {
+  const data = loadData();
+  if (!data) return;
+  const earliest = document.getElementById('earliestFinish');
+  const pf = document.getElementById('proposedFinish');
+  const bankedEl = document.getElementById('bankedValue');
+  if (!earliest || !pf || !bankedEl) return;
+
+  const eText = earliest.textContent;
+  const proposed = pf.value;
+
+  if (eText === '--:--' || !proposed) {
+    bankedEl.textContent = '--:--';
+    bankedEl.classList.remove('banked-positive');
     return;
   }
-  const actual = finishMins - total;
-  document.getElementById('actualFinish').textContent = minutesToTime(actual);
+
+  const eMins = timeToMinutes(eText);
+  const pMins = timeToMinutes(proposed);
+
+  if (isNaN(eMins) || isNaN(pMins)) {
+    bankedEl.textContent = '--:--';
+    bankedEl.classList.remove('banked-positive');
+    return;
+  }
+
+  const diff = pMins - eMins;
+  bankedEl.textContent = (diff >= 0 ? '+' : '') + minutesToTime(Math.abs(diff));
+  bankedEl.classList.toggle('banked-positive', diff >= 0);
 }
 
 function getTotalMinutes(data) {
@@ -403,7 +460,7 @@ function render() {
 
   const wn = getWeekNumber(new Date());
   document.getElementById('weekLabel').textContent =
-    `Week ${wn} — ${data.weekId}`;
+    `Week ${wn}`;
 
   const container = document.getElementById('daysContainer');
   container.innerHTML = '';
@@ -414,7 +471,11 @@ function render() {
 
     const name = document.createElement('div');
     name.className = 'day-name';
-    name.textContent = day;
+    if (day === 'Banked') {
+      name.innerHTML = 'Banked <span style="color:var(--text-secondary)">(WK ' + getPreviousWeekNumber() + ')</span>';
+    } else {
+      name.textContent = day;
+    }
     row.appendChild(name);
 
     const wrap = document.createElement('div');
@@ -437,7 +498,7 @@ function render() {
         display.value = data.noLunch ? '0.5' : '';
         saveData(data);
         updateTotal();
-        updateActualFinish();
+        updateEarliestFinish();
       });
       cbLabel.appendChild(cb);
       const labelSpan = document.createElement('span');
@@ -460,7 +521,7 @@ function render() {
       data.hours[day] = input.value;
       saveData(data);
       updateTotal();
-      updateActualFinish();
+      updateEarliestFinish();
     });
 
     const unit = document.createElement('span');
@@ -478,11 +539,20 @@ function render() {
   ff.addEventListener('change', () => {
     data.fridayFinish = ff.value;
     saveData(data);
-    updateActualFinish();
+    updateEarliestFinish();
+  });
+
+  const pf = document.getElementById('proposedFinish');
+  pf.value = data.proposedFinish || '17:00';
+  document.getElementById('bankedWeekNum').textContent = wn;
+  pf.addEventListener('change', () => {
+    data.proposedFinish = pf.value;
+    saveData(data);
+    updateBanked();
   });
 
   updateTotal();
-  updateActualFinish();
+  updateEarliestFinish();
 }
 
 function updateTotal() {
