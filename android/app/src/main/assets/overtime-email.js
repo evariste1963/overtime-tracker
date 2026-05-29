@@ -2,6 +2,8 @@ window.EmailConfig = {
   defaultTo: 'annette.bate@dncompany.com',
   defaultCc: 'neill.yates@dncompany.com',
   subjectPrefix: 'Overtime Summary',
+  recipientName: 'Annette',
+  senderName: 'Royston',
 };
 
 window.shareOvertime = function () {
@@ -25,43 +27,58 @@ window.shareOvertime = function () {
 
 function buildEmailBody(data, wn) {
   var lines = [];
-  lines.push('Annette,');
+  var sep = '  --------------------------------------------------';
+  var totalH = (getTotalMinutes(data) / 60).toFixed(2);
+
+  lines.push('');
+  lines.push('====================================================');
+  lines.push('          OVERTIME SUMMARY \u2014 Week ' + wn);
+  lines.push('====================================================');
+  lines.push('');
+  lines.push(EmailConfig.recipientName + ',');
   lines.push('');
   lines.push('Here is the summary of my extra hours this week:');
   lines.push('');
-  lines.push('');
-  ['Banked', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri'].forEach(function (day) {
-    var v = parseFloat(data.hours[day] || 0) || 0;
-    var label = day === 'Banked' ? 'Banked' : day;
-    lines.push(label.padEnd(8) + '\t' + v.toFixed(2) + ' h');
+  lines.push(sep);
+
+  var days = ['Banked', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
+  if (data.noLunch) days.push('Forgone lunch');
+
+  days.forEach(function (day) {
+    var v = day === 'Forgone lunch' ? 0.5 : (parseFloat(data.hours[day] || 0) || 0);
+    lines.push('    ' + day.padEnd(14) + ' \u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7   ' + v.toFixed(2) + ' h');
   });
-  if (data.noLunch) {
-    lines.push('No-lunch: 0.50 h');
-  }
+
+  lines.push(sep);
+  lines.push('    ' + 'Total'.padEnd(14) + ' \u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7   ' + totalH + ' h');
+  lines.push(sep);
   lines.push('');
-  lines.push('Total: ' + (getTotalMinutes(data) / 60).toFixed(2) + ' h');
+
   if (data.fridayFinish) {
     var finishMins = timeToMinutes(data.fridayFinish);
     if (!isNaN(finishMins)) {
       var earliestMins = finishMins - getTotalMinutes(data);
       var earliest = minutesToTime(earliestMins);
-      lines.push('');
-      lines.push('Scheduled finish:\t' + data.fridayFinish);
-      lines.push('Earliest finish:\t' + earliest);
+      lines.push(sep);
+      lines.push('    Scheduled finish \u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7   ' + data.fridayFinish);
+      lines.push('    Earliest finish \u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7   ' + earliest);
       if (data.proposedFinish) {
         var pMins = timeToMinutes(data.proposedFinish);
         if (!isNaN(pMins)) {
-          lines.push('Actual finish:\t\t' + data.proposedFinish);
+          lines.push('');
+          lines.push('    ACTUAL FINISH \u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7   ' + data.proposedFinish);
+          lines.push('');
           var diff = (pMins - earliestMins) / 60;
-          lines.push('Banked:\t\t' + (diff >= 0 ? '+' : '') + diff.toFixed(2) + ' h');
+          lines.push('    Banked \u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7   ' + (diff >= 0 ? '+' : '') + diff.toFixed(2) + ' h');
         }
       }
+      lines.push(sep);
     }
   }
+
   lines.push('');
+  lines.push('Regards,');
+  lines.push(EmailConfig.senderName);
   lines.push('');
-  lines.push('regards');
-  lines.push('');
-  lines.push('Royston');
   return lines;
 }
