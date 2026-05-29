@@ -246,10 +246,6 @@ h1 {
   background: var(--btn-primary);
   color: var(--btn-text);
 }
-.btn-clear-week {
-  background: var(--btn-primary);
-  color: var(--btn-text);
-}
 .btn-share {
   background: var(--accent-blue);
   color: #fff;
@@ -305,7 +301,6 @@ h1 {
   <div class="actions">
     <button class="btn-share" onclick="shareOvertime()">Share</button>
     <button class="btn-reset" onclick="resetAll()">Reset All</button>
-    <button class="btn-clear-week" onclick="clearWeek()">Clear Week</button>
   </div>
   <div class="footer-note">developed by this.me</div>
 </div>
@@ -354,7 +349,7 @@ function getDefaultData() {
   const weekId = getWeekId();
   const hours = {};
   DAYS.forEach(d => hours[d] = '');
-  return { weekId, hours, fridayFinish: '17:00', proposedFinish: '17:00', noLunch: false };
+  return { weekId, hours, fridayFinish: '15:00', proposedFinish: '15:00', noLunch: false };
 }
 
 function timeToMinutes(t) {
@@ -425,6 +420,15 @@ function getTotalMinutes(data) {
   return total * 60;
 }
 
+function computeBottomBanked(data) {
+  if (!data || !data.fridayFinish || !data.proposedFinish) return NaN;
+  const totalMins = getTotalMinutes(data);
+  const finishMins = timeToMinutes(data.fridayFinish);
+  const proposedMins = timeToMinutes(data.proposedFinish);
+  if (isNaN(finishMins) || isNaN(proposedMins)) return NaN;
+  return (proposedMins - (finishMins - totalMins)) / 60;
+}
+
 function toggleTheme() {
   const el = document.documentElement;
   el.classList.toggle('light');
@@ -453,7 +457,12 @@ function render() {
   const currentWeek = getWeekId();
 
   if (!data || data.weekId !== currentWeek) {
+    const oldData = data;
     data = getDefaultData();
+    const bottom = computeBottomBanked(oldData);
+    if (!isNaN(bottom) && bottom !== 0) {
+      data.hours.Banked = bottom.toFixed(2);
+    }
     saveData(data);
   }
 
@@ -534,7 +543,7 @@ function render() {
   });
 
   const ff = document.getElementById('fridayFinish');
-  ff.value = data.fridayFinish || '17:00';
+  ff.value = data.fridayFinish || '15:00';
   ff.addEventListener('change', () => {
     data.fridayFinish = ff.value;
     saveData(data);
@@ -542,7 +551,7 @@ function render() {
   });
 
   const pf = document.getElementById('proposedFinish');
-  pf.value = data.proposedFinish || '17:00';
+  pf.value = data.proposedFinish || '15:00';
   document.getElementById('bankedWeekNum').textContent = wn;
   pf.addEventListener('change', () => {
     data.proposedFinish = pf.value;
@@ -561,18 +570,15 @@ function updateTotal() {
 }
 
 function resetAll() {
-  if (!confirm('Reset everything to defaults?')) return;
-  const data = getDefaultData();
-  saveData(data);
-  render();
-}
-
-function clearWeek() {
-  if (!confirm('Clear hours, keep finish time?')) return;
+  if (!confirm('Clear all fields except Banked?')) return;
   const data = loadData();
   if (!data) return;
+  const banked = data.hours.Banked;
   DAYS.forEach(d => data.hours[d] = '');
+  data.hours.Banked = banked;
   data.noLunch = false;
+  data.fridayFinish = '15:00';
+  data.proposedFinish = '15:00';
   saveData(data);
   render();
 }
