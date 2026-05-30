@@ -21,13 +21,13 @@
   --text: var(--electric-teal);
   --text-secondary: var(--electric-teal);
   --text-label: var(--electric-teal);
-  --btn-text: #AAA;
+  --btn-text: #777;
   --accent: #888;
   --toggle-bg: #1a1a1a;
   --toggle-border: #333;
-  --accent-blue: #2563eb;
+  --accent-blue: #1e3a8a;
   --electric-teal: #3b82f6;
-  --text-glow: 0 0 1px var(--electric-teal), 0 0 4px var(--accent-blue), 0 0 10px var(--accent-blue);
+  --text-glow: 0 0 1px var(--accent-blue), 0 0 1px var(--electric-teal);
 }
 
 .light {
@@ -73,7 +73,7 @@ body {
   transition: background 0.3s, color 0.3s;
 }
 h1, .day-name, #combinedRow {
-  text-shadow: 0 0 1px var(--electric-teal), 0 0 3px var(--accent-blue);
+  text-shadow: var(--text-glow);
 }
 .sum-row, .finish-row {
   text-shadow: none;
@@ -255,7 +255,6 @@ h1 {
   font-weight: 600;
   cursor: pointer;
   transition: opacity 0.2s, background 0.3s, color 0.3s;
-  text-shadow: none;
 }
 .btn-reset {
   background: var(--accent-blue);
