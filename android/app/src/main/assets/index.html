@@ -345,8 +345,7 @@ const DAYS = ['Banked', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
 const STORAGE_KEY = 'ot_tracker';
 const THEME_KEY = 'ot_theme';
 
-function getWeekId() {
-  const now = new Date();
+function getWeekId(now = new Date()) {
   const start = new Date(now);
   const day = now.getDay() || 7;
   start.setDate(now.getDate() - day + 1);
@@ -488,8 +487,9 @@ function applyTheme() {
 }
 
 function render() {
+  const now = new Date();
   let data = loadData();
-  const currentWeek = getWeekId();
+  const currentWeek = getWeekId(now);
 
   if (!data || data.weekId !== currentWeek) {
     const oldData = data;
@@ -501,7 +501,7 @@ function render() {
     saveData(data);
   }
 
-  const wn = getWeekNumber(new Date());
+  const wn = getWeekNumber(now);
   document.getElementById('weekLabel').textContent =
     `Week ${wn}`;
 
