@@ -348,7 +348,8 @@ const THEME_KEY = 'ot_theme';
 function getWeekId() {
   const now = new Date();
   const start = new Date(now);
-  start.setDate(now.getDate() - now.getDay() + 1);
+  const day = now.getDay() || 7;
+  start.setDate(now.getDate() - day + 1);
   const y = start.getFullYear();
   const m = String(start.getMonth() + 1).padStart(2, '0');
   const d = String(start.getDate()).padStart(2, '0');
