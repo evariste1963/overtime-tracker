@@ -1,6 +1,6 @@
 window.EmailConfig = {
   defaultTo: 'annette.bate@dncompany.com',
-  defaultCc: 'neill.yates@dncompany.com',
+  defaultCc: 'neill.yates@dncompany.com; royston.allfrey@dncompany.com',
   subjectPrefix: 'Overtime Summary',
   recipientName: 'Annette',
   senderName: 'Royston',
@@ -76,7 +76,7 @@ function buildEmailBody(data, wn) {
   lines.push('Regards,');
   lines.push('');
   lines.push(EmailConfig.senderName);
-  lines.push('*pp. royston.allfrey@dncompany.com*');
+  lines.push('pp. royston.allfrey@dncompany.com');
   lines.push('');
   return lines;
 }
