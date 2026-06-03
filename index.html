@@ -347,6 +347,7 @@ const THEME_KEY = 'ot_theme';
 
 function getWeekId(now = new Date()) {
   const start = new Date(now);
+  start.setHours(0,0,0,0);
   const day = now.getDay() || 7;
   start.setDate(now.getDate() - day + 1);
   const y = start.getFullYear();
