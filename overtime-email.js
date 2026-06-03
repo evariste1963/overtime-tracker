@@ -1,38 +1,84 @@
-window.EmailConfig = {
-  defaultTo: 'annette.bate@dncompany.com',
-  defaultCc: 'neill.yates@dncompany.com; royston.allfrey@dncompany.com',
-  subjectPrefix: 'Overtime Summary',
-  recipientName: 'Annette',
-  senderName: 'Royston',
-};
+var DEFAULTS_KEY = 'ot_email_defaults';
+
+function loadEmailDefaults() {
+  var raw = localStorage.getItem(DEFAULTS_KEY);
+  if (raw) {
+    try { return JSON.parse(raw); } catch (_) {}
+  }
+  return {
+    defaultTo: '',
+    defaultCc: '',
+    recipientName: '',
+    senderName: '',
+    subjectPrefix: 'Overtime Summary'
+  };
+}
+
+function saveEmailDefaults(obj) {
+  localStorage.setItem(DEFAULTS_KEY, JSON.stringify(obj));
+}
+
+function openEmailDefaultsModal() {
+  var cfg = loadEmailDefaults();
+  document.getElementById('defaultToInput').value = cfg.defaultTo;
+  document.getElementById('defaultCcInput').value = cfg.defaultCc;
+  document.getElementById('recipientNameInput').value = cfg.recipientName;
+  document.getElementById('senderNameInput').value = cfg.senderName;
+  document.getElementById('defaultsModal').style.display = 'flex';
+}
+
+function closeEmailDefaultsModal(ev) {
+  if (ev && ev.target !== ev.currentTarget) return;
+  document.getElementById('defaultsModal').style.display = 'none';
+}
+
+function saveEmailDefaultsFromForm() {
+  var cfg = {
+    defaultTo: document.getElementById('defaultToInput').value.trim(),
+    defaultCc: document.getElementById('defaultCcInput').value.trim(),
+    recipientName: document.getElementById('recipientNameInput').value.trim(),
+    senderName: document.getElementById('senderNameInput').value.trim(),
+    subjectPrefix: 'Overtime Summary'
+  };
+  saveEmailDefaults(cfg);
+  closeEmailDefaultsModal();
+}
 
 window.shareOvertime = function () {
+  var cfg = loadEmailDefaults();
+  if (!cfg.defaultTo) {
+    if (confirm('No default recipient set. Open email defaults?')) {
+      openEmailDefaultsModal();
+    }
+    return;
+  }
+
   var raw = localStorage.getItem('ot_tracker');
   if (!raw) return;
   var data = JSON.parse(raw);
   var wn = getWeekNumber(new Date());
-  var lines = buildEmailBody(data, wn);
-  var subject = EmailConfig.subjectPrefix + ' \u2014 Week ' + wn;
+  var lines = buildEmailBody(data, wn, cfg);
+  var subject = cfg.subjectPrefix + ' \u2014 Week ' + wn;
   var body = lines.join('\n');
   if (navigator.share) {
     navigator.share({ title: subject, text: body }).catch(function () { });
   } else {
-    var mailto = 'mailto:' + EmailConfig.defaultTo
-      + '?cc=' + encodeURIComponent(EmailConfig.defaultCc)
+    var mailto = 'mailto:' + cfg.defaultTo
+      + '?cc=' + encodeURIComponent(cfg.defaultCc)
       + '&subject=' + encodeURIComponent(subject)
       + '&body=' + encodeURIComponent(body);
     window.location.href = mailto;
   }
 };
 
-function buildEmailBody(data, wn) {
+function buildEmailBody(data, wn, cfg) {
   var lines = [];
   var sep = '  --------------------------------------------------';
   var totalH = (getTotalMinutes(data) / 60).toFixed(2);
   var lastWn = wn === 1 ? 52 : wn - 1;
 
   lines.push('');
-  lines.push(EmailConfig.recipientName + ',');
+  lines.push(cfg.recipientName + ',');
   lines.push('');
   lines.push('Here is the summary of my extra hours this week:');
   lines.push('');
@@ -75,8 +121,7 @@ function buildEmailBody(data, wn) {
   lines.push('');
   lines.push('Regards,');
   lines.push('');
-  lines.push(EmailConfig.senderName);
-  lines.push('pp. royston.allfrey@dncompany.com');
+  lines.push(cfg.senderName);
   lines.push('');
   return lines;
 }

@@ -292,6 +292,85 @@ h1 {
 }
 #proposedFinish:focus { border-color: var(--accent); }
 .banked-week { color: var(--text-secondary); }
+.modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  padding: 20px;
+}
+.modal-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 24px;
+  width: 100%;
+  max-width: 380px;
+}
+.modal-card h2 {
+  font-size: 18px;
+  margin-bottom: 16px;
+  color: var(--electric-teal);
+}
+.modal-field {
+  margin-bottom: 14px;
+}
+.modal-field label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-label);
+  margin-bottom: 4px;
+}
+.modal-field input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--input-bg);
+  color: var(--text);
+  font-size: 15px;
+  outline: none;
+}
+.modal-field input:focus {
+  border-color: var(--accent);
+}
+.modal-field small {
+  display: block;
+  font-size: 11px;
+  color: var(--text-secondary);
+  margin-top: 2px;
+  opacity: 0.6;
+}
+.modal-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 20px;
+}
+.modal-btn {
+  flex: 1;
+  padding: 10px;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.btn-save {
+  background: var(--accent-blue);
+  color: #fff;
+}
+.btn-cancel {
+  background: var(--finish-bg);
+  color: var(--text);
+}
+.btn-defaults {
+  background: var(--accent-blue);
+  color: var(--btn-text);
+}
 </style>
 </head>
 <body>
@@ -333,12 +412,40 @@ h1 {
   </div>
 
   <div class="actions">
+    <button class="btn-defaults" onclick="openEmailDefaultsModal()">set defaults</button>
     <button class="btn-share" onclick="shareOvertime()">send e-mail</button>
     <button class="btn-reset" onclick="resetAll()">reset all</button>
   </div>
   <div class="footer-note">developed by this.me</div>
 </div>
 
+<div id="defaultsModal" class="modal-overlay" onclick="closeEmailDefaultsModal(event)">
+  <div class="modal-card" onclick="event.stopPropagation()">
+    <h2>Email Defaults</h2>
+    <div class="modal-field">
+      <label>Default To</label>
+      <input type="text" id="defaultToInput" placeholder="email@example.com">
+      <small>semi-colon separated</small>
+    </div>
+    <div class="modal-field">
+      <label>Default Cc</label>
+      <input type="text" id="defaultCcInput" placeholder="email@example.com">
+      <small>semi-colon separated</small>
+    </div>
+    <div class="modal-field">
+      <label>Recipient Name</label>
+      <input type="text" id="recipientNameInput" placeholder="e.g. Annette">
+    </div>
+    <div class="modal-field">
+      <label>Sender Name</label>
+      <input type="text" id="senderNameInput" placeholder="e.g. Royston">
+    </div>
+    <div class="modal-actions">
+      <button class="btn-save modal-btn" onclick="saveEmailDefaultsFromForm()">Save</button>
+      <button class="btn-cancel modal-btn" onclick="closeEmailDefaultsModal()">Cancel</button>
+    </div>
+  </div>
+</div>
 <script src="overtime-email.js"></script>
 <script>
 const DAYS = ['Banked', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
