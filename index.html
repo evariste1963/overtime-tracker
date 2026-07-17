@@ -55,8 +55,7 @@
 .light .footer-note {
   text-shadow: none;
 }
-.light .btn-share,
-.light .btn-reset {
+.light .btn-share {
   color: #fff;
 }
 
@@ -258,10 +257,6 @@ h1 {
   cursor: pointer;
   transition: opacity 0.2s, background 0.3s, color 0.3s;
 }
-.btn-reset {
-  background: var(--accent-blue);
-  color: var(--btn-text);
-}
 .btn-share {
   background: var(--accent-blue);
   color: var(--btn-text);
@@ -445,7 +440,6 @@ h1 {
     <button class="btn-defaults" onclick="openEmailDefaultsModal()">set defaults</button>
     <button class="btn-share" onclick="shareOvertime()">send e-mail</button>
     <button class="btn-backup" onclick="openBackupModal()">backup</button>
-    <button class="btn-reset" onclick="resetAll()">reset all</button>
   </div>
   <div class="footer-note">developed by this.me</div>
 </div>
@@ -804,20 +798,6 @@ function updateTotal() {
   const data = loadData();
   if (!data) return;
   document.getElementById('totalHours').textContent = (getTotalMinutes(data) / 60).toFixed(2) + ' h';
-}
-
-function resetAll() {
-  if (!confirm('Clear all fields except Banked?')) return;
-  const data = loadData();
-  if (!data) return;
-  const banked = data.hours.Banked;
-  DAYS.forEach(d => data.hours[d] = '');
-  data.hours.Banked = banked;
-  data.noLunch = false;
-  data.fridayFinish = '15:00';
-  data.proposedFinish = '15:00';
-  saveData(data);
-  render();
 }
 
 // ===== Backup & Restore functions =====
