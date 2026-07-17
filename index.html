@@ -481,8 +481,8 @@ h1 {
     <div id="backupNotice"></div>
     
     <div style="margin-bottom: 20px;">
-      <h3 style="font-size: 14px; font-weight: 600; margin-bottom: 10px; color: var(--electric-teal);">Local Backups</h3>
-      <div id="backupsList" style="max-height: 200px; overflow-y: auto; margin-bottom: 10px;">
+      <h3 style="font-size: 14px; font-weight: 600; margin-bottom: 10px; color: var(--electric-teal);">Local Backups <span id="backupCount"></span></h3>
+      <div id="backupsList" style="max-height: 320px; overflow-y: auto; margin-bottom: 10px;">
         <p style="font-size: 12px; color: var(--text-secondary); text-align: center; padding: 20px;">Loading backups...</p>
       </div>
     </div>
@@ -513,7 +513,7 @@ const STORAGE_KEY = 'ot_tracker';
 const THEME_KEY = 'ot_theme';
 const BACKUPS_KEY = 'ot_backups';
 const BACKUP_VERSION = 1;
-const MAX_LOCAL_BACKUPS = 10;
+const MAX_LOCAL_BACKUPS = 4;
 
 function getWeekId(now = new Date()) {
   const start = new Date(now);
@@ -836,17 +836,16 @@ function saveBackups(backups) {
 }
 
 function createLocalBackup() {
-  const backup = createBackupObject();
   const backups = getAllBackups();
-  
-  // Add new backup to front
+  const lastBackup = backups[0];
+  if (lastBackup && Date.now() - new Date(lastBackup.timestamp).getTime() < 5000) {
+    return;
+  }
+  const backup = createBackupObject();
   backups.unshift(backup);
-  
-  // Keep only the last MAX_LOCAL_BACKUPS
   if (backups.length > MAX_LOCAL_BACKUPS) {
     backups.splice(MAX_LOCAL_BACKUPS);
   }
-  
   saveBackups(backups);
 }
 
@@ -937,6 +936,7 @@ function formatDate(isoString) {
 
 function loadBackupsList() {
   const backups = getAllBackups();
+  document.getElementById('backupCount').textContent = `(${backups.length})`;
   const listContainer = document.getElementById('backupsList');
   
   if (backups.length === 0) {
@@ -994,11 +994,6 @@ function closeBackupModal(ev) {
 
 // Create automatic backup when app is closed
 function setupAutoBackup() {
-  window.addEventListener('beforeunload', () => {
-    createLocalBackup();
-  });
-  
-  // Also backup when page becomes hidden (tab switch, app minimized)
   document.addEventListener('visibilitychange', () => {
     if (document.hidden) {
       createLocalBackup();
