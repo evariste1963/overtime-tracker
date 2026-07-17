@@ -55,8 +55,7 @@
 .light .footer-note {
   text-shadow: none;
 }
-.light .btn-share,
-.light .btn-reset {
+.light .btn-share {
   color: #fff;
 }
 
@@ -245,9 +244,11 @@ h1 {
   display: flex;
   gap: 10px;
   margin-top: 16px;
+  flex-wrap: wrap;
 }
 .actions button {
   flex: 1;
+  min-width: 80px;
   padding: 12px;
   border: none;
   border-radius: 10px;
@@ -256,11 +257,15 @@ h1 {
   cursor: pointer;
   transition: opacity 0.2s, background 0.3s, color 0.3s;
 }
-.btn-reset {
+.btn-share {
   background: var(--accent-blue);
   color: var(--btn-text);
 }
-.btn-share {
+.btn-defaults {
+  background: var(--accent-blue);
+  color: var(--btn-text);
+}
+.btn-backup {
   background: var(--accent-blue);
   color: var(--btn-text);
 }
@@ -309,6 +314,8 @@ h1 {
   padding: 24px;
   width: 100%;
   max-width: 380px;
+  max-height: 90vh;
+  overflow-y: auto;
 }
 .modal-card h2 {
   font-size: 18px;
@@ -367,9 +374,27 @@ h1 {
   background: var(--finish-bg);
   color: var(--text);
 }
-.btn-defaults {
-  background: var(--accent-blue);
-  color: var(--btn-text);
+.modal-notice {
+  background: var(--input-bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 16px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+.modal-notice.success { color: var(--electric-teal); }
+.modal-notice.error { color: #ff6b6b; }
+.backup-info {
+  background: var(--input-bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 16px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.5;
 }
 </style>
 </head>
@@ -414,7 +439,7 @@ h1 {
   <div class="actions">
     <button class="btn-defaults" onclick="openEmailDefaultsModal()">set defaults</button>
     <button class="btn-share" onclick="shareOvertime()">send e-mail</button>
-    <button class="btn-reset" onclick="resetAll()">reset all</button>
+    <button class="btn-backup" onclick="openBackupModal()">backup</button>
   </div>
   <div class="footer-note">developed by this.me</div>
 </div>
@@ -446,11 +471,49 @@ h1 {
     </div>
   </div>
 </div>
+
+<div id="backupModal" class="modal-overlay" onclick="closeBackupModal(event)">
+  <div class="modal-card" onclick="event.stopPropagation()">
+    <h2>Data Backup & Restore</h2>
+    <div class="backup-info">
+      💾 <strong>Automatic Backups:</strong> Your data is automatically saved locally when you close the app. Recent backups are listed below.
+    </div>
+    <div id="backupNotice"></div>
+    
+    <div style="margin-bottom: 20px;">
+      <h3 style="font-size: 14px; font-weight: 600; margin-bottom: 10px; color: var(--electric-teal);">Local Backups</h3>
+      <div id="backupsList" style="max-height: 200px; overflow-y: auto; margin-bottom: 10px;">
+        <p style="font-size: 12px; color: var(--text-secondary); text-align: center; padding: 20px;">Loading backups...</p>
+      </div>
+    </div>
+
+    <div style="margin-bottom: 20px;">
+      <h3 style="font-size: 14px; font-weight: 600; margin-bottom: 10px; color: var(--electric-teal);">Export as Text</h3>
+      <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 10px;">Copy your backup as text to paste into email, notes, or cloud storage.</p>
+      <button class="modal-btn btn-save" onclick="copyBackupToClipboard()" style="width: 100%;">Copy Backup to Clipboard</button>
+    </div>
+
+    <div style="margin-bottom: 20px; padding: 10px; background: var(--input-bg); border-radius: 8px;">
+      <h3 style="font-size: 14px; font-weight: 600; margin-bottom: 10px; color: var(--electric-teal);">Restore from Text</h3>
+      <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 10px;">Paste a backup code to restore your data.</p>
+      <textarea id="restoreTextarea" placeholder="Paste backup code here..." style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 6px; background: var(--card); color: var(--text); font-size: 12px; margin-bottom: 10px; min-height: 60px; font-family: monospace;"></textarea>
+      <button class="modal-btn btn-save" onclick="restoreFromText()" style="width: 100%;">Restore from Text</button>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn-cancel modal-btn" onclick="closeBackupModal()">Close</button>
+    </div>
+  </div>
+</div>
+
 <script src="overtime-email.js"></script>
 <script>
 const DAYS = ['Banked', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
 const STORAGE_KEY = 'ot_tracker';
 const THEME_KEY = 'ot_theme';
+const BACKUPS_KEY = 'ot_backups';
+const BACKUP_VERSION = 1;
+const MAX_LOCAL_BACKUPS = 10;
 
 function getWeekId(now = new Date()) {
   const start = new Date(now);
@@ -478,13 +541,27 @@ function getPreviousWeekNumber() {
 }
 
 function loadData() {
-  const raw = localStorage.getItem(STORAGE_KEY);
-  if (!raw) return null;
-  try { return JSON.parse(raw); } catch { return null; }
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return null;
+    return JSON.parse(raw);
+  } catch (e) {
+    console.error('Failed to load data:', e);
+    return null;
+  }
 }
 
 function saveData(data) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    return true;
+  } catch (e) {
+    console.error('Failed to save data:', e);
+    if (e.name === 'QuotaExceededError') {
+      alert('Storage quota exceeded. Please export your data and clear old backups.');
+    }
+    return false;
+  }
 }
 
 function getDefaultData() {
@@ -723,22 +800,215 @@ function updateTotal() {
   document.getElementById('totalHours').textContent = (getTotalMinutes(data) / 60).toFixed(2) + ' h';
 }
 
-function resetAll() {
-  if (!confirm('Clear all fields except Banked?')) return;
-  const data = loadData();
-  if (!data) return;
-  const banked = data.hours.Banked;
-  DAYS.forEach(d => data.hours[d] = '');
-  data.hours.Banked = banked;
-  data.noLunch = false;
-  data.fridayFinish = '15:00';
-  data.proposedFinish = '15:00';
-  saveData(data);
-  render();
+// ===== Backup & Restore functions =====
+
+function createBackupObject() {
+  const tracker = loadData();
+  const emailDefaults = localStorage.getItem('ot_email_defaults');
+  
+  return {
+    version: BACKUP_VERSION,
+    timestamp: new Date().toISOString(),
+    tracker: tracker,
+    emailDefaults: emailDefaults ? JSON.parse(emailDefaults) : null
+  };
+}
+
+function getAllBackups() {
+  try {
+    const raw = localStorage.getItem(BACKUPS_KEY);
+    if (!raw) return [];
+    return JSON.parse(raw);
+  } catch (e) {
+    console.error('Failed to load backups:', e);
+    return [];
+  }
+}
+
+function saveBackups(backups) {
+  try {
+    localStorage.setItem(BACKUPS_KEY, JSON.stringify(backups));
+    return true;
+  } catch (e) {
+    console.error('Failed to save backups:', e);
+    return false;
+  }
+}
+
+function createLocalBackup() {
+  const backup = createBackupObject();
+  const backups = getAllBackups();
+  
+  // Add new backup to front
+  backups.unshift(backup);
+  
+  // Keep only the last MAX_LOCAL_BACKUPS
+  if (backups.length > MAX_LOCAL_BACKUPS) {
+    backups.splice(MAX_LOCAL_BACKUPS);
+  }
+  
+  saveBackups(backups);
+}
+
+function restoreFromBackup(backup) {
+  try {
+    if (backup.tracker) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(backup.tracker));
+    }
+    
+    if (backup.emailDefaults) {
+      localStorage.setItem('ot_email_defaults', JSON.stringify(backup.emailDefaults));
+    }
+    
+    return true;
+  } catch (e) {
+    console.error('Failed to restore backup:', e);
+    return false;
+  }
+}
+
+function encodeBackup() {
+  const backup = createBackupObject();
+  const json = JSON.stringify(backup);
+  return btoa(json);
+}
+
+function decodeBackup(encoded) {
+  try {
+    const json = atob(encoded);
+    return JSON.parse(json);
+  } catch (e) {
+    return null;
+  }
+}
+
+function copyBackupToClipboard() {
+  const encoded = encodeBackup();
+  navigator.clipboard.writeText(encoded).then(() => {
+    showBackupNotice('✅ Backup code copied to clipboard!', 'success');
+  }).catch(() => {
+    showBackupNotice('Failed to copy to clipboard. Try on a secure connection.', 'error');
+  });
+}
+
+function restoreFromText() {
+  const textarea = document.getElementById('restoreTextarea');
+  const code = textarea.value.trim();
+  
+  if (!code) {
+    showBackupNotice('Please paste a backup code.', 'error');
+    return;
+  }
+  
+  const backup = decodeBackup(code);
+  
+  if (!backup) {
+    showBackupNotice('Invalid backup code. Make sure you copied it correctly.', 'error');
+    return;
+  }
+  
+  if (!backup.version || backup.version !== BACKUP_VERSION) {
+    showBackupNotice('Backup format not recognized.', 'error');
+    return;
+  }
+  
+  if (confirm('Restore backup from ' + new Date(backup.timestamp).toLocaleString() + '?')) {
+    if (restoreFromBackup(backup)) {
+      showBackupNotice('✅ Data restored! Reloading...', 'success');
+      setTimeout(() => {
+        location.reload();
+      }, 1500);
+    } else {
+      showBackupNotice('Failed to restore backup.', 'error');
+    }
+  }
+}
+
+function showBackupNotice(message, type) {
+  const notice = document.getElementById('backupNotice');
+  notice.className = 'modal-notice ' + type;
+  notice.textContent = message;
+}
+
+function formatDate(isoString) {
+  const date = new Date(isoString);
+  return date.toLocaleString();
+}
+
+function loadBackupsList() {
+  const backups = getAllBackups();
+  const listContainer = document.getElementById('backupsList');
+  
+  if (backups.length === 0) {
+    listContainer.innerHTML = '<p style="font-size: 12px; color: var(--text-secondary); text-align: center; padding: 20px;">No backups yet. They will be created automatically when you close the app.</p>';
+    return;
+  }
+  
+  let html = '';
+  backups.forEach((backup, index) => {
+    const date = formatDate(backup.timestamp);
+    const trackerHours = backup.tracker ? Object.values(backup.tracker.hours).filter(h => h).length : 0;
+    html += `
+      <div style="background: var(--input-bg); border: 1px solid var(--border); border-radius: 6px; padding: 10px; margin-bottom: 8px; font-size: 12px;">
+        <div style="color: var(--electric-teal); font-weight: 600; margin-bottom: 4px;">${date}</div>
+        <div style="color: var(--text-secondary); margin-bottom: 6px;">Data entries: ${trackerHours} days</div>
+        <button class="modal-btn btn-save" onclick="restoreLocalBackup(${index})" style="width: 100%; padding: 6px; font-size: 11px;">Restore</button>
+      </div>
+    `;
+  });
+  
+  listContainer.innerHTML = html;
+}
+
+function restoreLocalBackup(index) {
+  const backups = getAllBackups();
+  if (index < 0 || index >= backups.length) {
+    showBackupNotice('Backup not found.', 'error');
+    return;
+  }
+  
+  const backup = backups[index];
+  if (confirm('Restore backup from ' + formatDate(backup.timestamp) + '?')) {
+    if (restoreFromBackup(backup)) {
+      showBackupNotice('✅ Data restored! Reloading...', 'success');
+      setTimeout(() => {
+        location.reload();
+      }, 1500);
+    } else {
+      showBackupNotice('Failed to restore backup.', 'error');
+    }
+  }
+}
+
+function openBackupModal() {
+  document.getElementById('backupModal').style.display = 'flex';
+  document.getElementById('restoreTextarea').value = '';
+  document.getElementById('backupNotice').textContent = '';
+  loadBackupsList();
+}
+
+function closeBackupModal(ev) {
+  if (ev && ev.target !== ev.currentTarget) return;
+  document.getElementById('backupModal').style.display = 'none';
+}
+
+// Create automatic backup when app is closed
+function setupAutoBackup() {
+  window.addEventListener('beforeunload', () => {
+    createLocalBackup();
+  });
+  
+  // Also backup when page becomes hidden (tab switch, app minimized)
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+      createLocalBackup();
+    }
+  });
 }
 
 applyTheme();
 render();
+setupAutoBackup();
 
 if ('serviceWorker' in navigator) {
   try {
