@@ -488,16 +488,16 @@ h1 {
     </div>
 
     <div style="margin-bottom: 20px;">
-      <h3 style="font-size: 14px; font-weight: 600; margin-bottom: 10px; color: var(--electric-teal);">Export to File</h3>
-      <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 10px;">Download a backup as a JSON file for external storage (cloud, email, etc).</p>
-      <button class="modal-btn btn-save" onclick="exportData()" style="width: 100%;">Download Backup (.json)</button>
+      <h3 style="font-size: 14px; font-weight: 600; margin-bottom: 10px; color: var(--electric-teal);">Export as Text</h3>
+      <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 10px;">Copy your backup as text to paste into email, notes, or cloud storage.</p>
+      <button class="modal-btn btn-save" onclick="copyBackupToClipboard()" style="width: 100%;">Copy Backup to Clipboard</button>
     </div>
 
     <div style="margin-bottom: 20px; padding: 10px; background: var(--input-bg); border-radius: 8px;">
-      <h3 style="font-size: 14px; font-weight: 600; margin-bottom: 10px; color: var(--electric-teal);">Import from File</h3>
-      <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 10px;">Restore data from a previously exported backup file.</p>
-      <input type="file" id="importFile" accept=".json" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 6px; background: var(--card); color: var(--text); font-size: 12px; margin-bottom: 10px;">
-      <button class="modal-btn btn-save" onclick="importData()" style="width: 100%;">Restore from File</button>
+      <h3 style="font-size: 14px; font-weight: 600; margin-bottom: 10px; color: var(--electric-teal);">Restore from Text</h3>
+      <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 10px;">Paste a backup code to restore your data.</p>
+      <textarea id="restoreTextarea" placeholder="Paste backup code here..." style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 6px; background: var(--card); color: var(--text); font-size: 12px; margin-bottom: 10px; min-height: 60px; font-family: monospace;"></textarea>
+      <button class="modal-btn btn-save" onclick="restoreFromText()" style="width: 100%;">Restore from Text</button>
     </div>
 
     <div class="modal-actions">
@@ -867,55 +867,61 @@ function restoreFromBackup(backup) {
   }
 }
 
-function exportData() {
+function encodeBackup() {
   const backup = createBackupObject();
-  const json = JSON.stringify(backup, null, 2);
-  const blob = new Blob([json], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `overtime-backup-${new Date().toISOString().split('T')[0]}.json`;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
-  
-  showBackupNotice('Backup downloaded successfully!', 'success');
+  const json = JSON.stringify(backup);
+  return btoa(json);
 }
 
-function importData() {
-  const fileInput = document.getElementById('importFile');
-  const file = fileInput.files[0];
+function decodeBackup(encoded) {
+  try {
+    const json = atob(encoded);
+    return JSON.parse(json);
+  } catch (e) {
+    return null;
+  }
+}
+
+function copyBackupToClipboard() {
+  const encoded = encodeBackup();
+  navigator.clipboard.writeText(encoded).then(() => {
+    showBackupNotice('✅ Backup code copied to clipboard!', 'success');
+  }).catch(() => {
+    showBackupNotice('Failed to copy to clipboard. Try on a secure connection.', 'error');
+  });
+}
+
+function restoreFromText() {
+  const textarea = document.getElementById('restoreTextarea');
+  const code = textarea.value.trim();
   
-  if (!file) {
-    showBackupNotice('Please select a backup file.', 'error');
+  if (!code) {
+    showBackupNotice('Please paste a backup code.', 'error');
     return;
   }
   
-  const reader = new FileReader();
-  reader.onload = function(e) {
-    try {
-      const backup = JSON.parse(e.target.result);
-      
-      if (!backup.version || backup.version !== BACKUP_VERSION) {
-        showBackupNotice('Invalid backup file format.', 'error');
-        return;
-      }
-      
-      if (restoreFromBackup(backup)) {
-        showBackupNotice('Data restored successfully! Reloading...', 'success');
-        setTimeout(() => {
-          location.reload();
-        }, 1500);
-      } else {
-        showBackupNotice('Failed to restore backup.', 'error');
-      }
-    } catch (err) {
-      showBackupNotice('Failed to read backup file: ' + err.message, 'error');
-    }
-  };
+  const backup = decodeBackup(code);
   
-  reader.readAsText(file);
+  if (!backup) {
+    showBackupNotice('Invalid backup code. Make sure you copied it correctly.', 'error');
+    return;
+  }
+  
+  if (!backup.version || backup.version !== BACKUP_VERSION) {
+    showBackupNotice('Backup format not recognized.', 'error');
+    return;
+  }
+  
+  if (confirm('Restore backup from ' + new Date(backup.timestamp).toLocaleString() + '?')) {
+    if (restoreFromBackup(backup)) {
+      showBackupNotice('✅ Data restored! Reloading...', 'success');
+      setTimeout(() => {
+        location.reload();
+      }, 1500);
+    } else {
+      showBackupNotice('Failed to restore backup.', 'error');
+    }
+  }
 }
 
 function showBackupNotice(message, type) {
@@ -964,7 +970,7 @@ function restoreLocalBackup(index) {
   const backup = backups[index];
   if (confirm('Restore backup from ' + formatDate(backup.timestamp) + '?')) {
     if (restoreFromBackup(backup)) {
-      showBackupNotice('Data restored successfully! Reloading...', 'success');
+      showBackupNotice('✅ Data restored! Reloading...', 'success');
       setTimeout(() => {
         location.reload();
       }, 1500);
@@ -976,7 +982,7 @@ function restoreLocalBackup(index) {
 
 function openBackupModal() {
   document.getElementById('backupModal').style.display = 'flex';
-  document.getElementById('importFile').value = '';
+  document.getElementById('restoreTextarea').value = '';
   document.getElementById('backupNotice').textContent = '';
   loadBackupsList();
 }
