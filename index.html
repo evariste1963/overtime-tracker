@@ -242,17 +242,17 @@ h1 {
 .banked-positive { color: var(--electric-teal); }
 .actions {
   display: flex;
-  gap: 10px;
+  gap: 8px;
   margin-top: 16px;
-  flex-wrap: wrap;
+  align-items: center;
 }
 .actions button {
   flex: 1;
-  min-width: 80px;
-  padding: 12px;
+  min-width: 60px;
+  padding: 10px 6px;
   border: none;
   border-radius: 10px;
-  font-size: 14px;
+  font-size: 12px;
   font-weight: 600;
   cursor: pointer;
   transition: opacity 0.2s, background 0.3s, color 0.3s;
@@ -268,6 +268,34 @@ h1 {
 .btn-backup {
   background: var(--accent-blue);
   color: var(--btn-text);
+}
+.btn-save-action {
+  background: var(--accent-blue);
+  color: var(--btn-text);
+}
+.save-toast {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+.save-toast.visible {
+  opacity: 1;
+}
+.save-toast-inner {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 32px 48px;
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--electric-teal);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.4);
 }
 .footer-note {
   text-align: center;
@@ -439,6 +467,7 @@ h1 {
   <div class="actions">
     <button class="btn-defaults" onclick="openEmailDefaultsModal()">set defaults</button>
     <button class="btn-share" onclick="shareOvertime()">send e-mail</button>
+    <button class="btn-save-action" onclick="saveAll()">save</button>
     <button class="btn-backup" onclick="openBackupModal()">backup</button>
   </div>
   <div class="footer-note">developed by this.me</div>
@@ -476,7 +505,7 @@ h1 {
   <div class="modal-card" onclick="event.stopPropagation()">
     <h2>Data Backup & Restore</h2>
     <div class="backup-info">
-      💾 <strong>Automatic Backups:</strong> Your data is automatically saved locally when you close the app. Recent backups are listed below.
+      💾 <strong>Backups:</strong> A backup snapshot is created each time you press <strong>save</strong>. Recent backups are listed below.
     </div>
     <div id="backupNotice"></div>
     
@@ -506,6 +535,7 @@ h1 {
   </div>
 </div>
 
+<div class="save-toast" id="saveToast"><div class="save-toast-inner">Saved ✓</div></div>
 <script src="overtime-email.js"></script>
 <script>
 const DAYS = ['Banked', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
@@ -514,6 +544,7 @@ const THEME_KEY = 'ot_theme';
 const BACKUPS_KEY = 'ot_backups';
 const BACKUP_VERSION = 1;
 const MAX_LOCAL_BACKUPS = 4;
+let currentData = null;
 
 function getWeekId(now = new Date()) {
   const start = new Date(now);
@@ -583,8 +614,8 @@ function minutesToTime(mins) {
   return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
 }
 
-function updateEarliestFinish() {
-  const data = loadData();
+function updateEarliestFinish(data) {
+  data = data || loadData();
   if (!data) return;
   const total = getTotalMinutes(data);
   const finishStr = data.fridayFinish || '';
@@ -595,11 +626,11 @@ function updateEarliestFinish() {
   } else {
     el.textContent = minutesToTime(finishMins - total);
   }
-  updateBanked();
+  updateBanked(data);
 }
 
-function updateBanked() {
-  const data = loadData();
+function updateBanked(data) {
+  data = data || loadData();
   if (!data) return;
   const earliest = document.getElementById('earliestFinish');
   const pf = document.getElementById('proposedFinish');
@@ -685,6 +716,7 @@ function render() {
     }
     saveData(data);
   }
+  currentData = data;
 
   const wn = getWeekNumber(now);
   document.getElementById('weekLabel').textContent =
@@ -724,9 +756,8 @@ function render() {
       cb.addEventListener('change', () => {
         data.noLunch = cb.checked;
         display.value = data.noLunch ? '0.5' : '';
-        saveData(data);
-        updateTotal();
-        updateEarliestFinish();
+        updateTotal(data);
+        updateEarliestFinish(data);
       });
       cbLabel.appendChild(cb);
       const labelSpan = document.createElement('span');
@@ -748,9 +779,8 @@ function render() {
       if (v.startsWith('.')) v = '0' + v;
       if (v !== input.value) input.value = v;
       data.hours[day] = input.value;
-      saveData(data);
-      updateTotal();
-      updateEarliestFinish();
+      updateTotal(data);
+      updateEarliestFinish(data);
     });
     input.addEventListener('blur', () => {
       if (input.value !== '') {
@@ -758,7 +788,6 @@ function render() {
         if (!isNaN(f)) {
           input.value = f.toFixed(2);
           data.hours[day] = input.value;
-          saveData(data);
         }
       }
     });
@@ -777,8 +806,7 @@ function render() {
   ff.value = data.fridayFinish || '15:00';
   ff.addEventListener('change', () => {
     data.fridayFinish = ff.value;
-    saveData(data);
-    updateEarliestFinish();
+    updateEarliestFinish(data);
   });
 
   const pf = document.getElementById('proposedFinish');
@@ -786,16 +814,15 @@ function render() {
   document.getElementById('bankedWeekNum').textContent = wn;
   pf.addEventListener('change', () => {
     data.proposedFinish = pf.value;
-    saveData(data);
-    updateBanked();
+    updateBanked(data);
   });
 
-  updateTotal();
-  updateEarliestFinish();
+  updateTotal(data);
+  updateEarliestFinish(data);
 }
 
-function updateTotal() {
-  const data = loadData();
+function updateTotal(data) {
+  data = data || loadData();
   if (!data) return;
   document.getElementById('totalHours').textContent = (getTotalMinutes(data) / 60).toFixed(2) + ' h';
 }
@@ -838,10 +865,15 @@ function saveBackups(backups) {
 function createLocalBackup() {
   const backups = getAllBackups();
   const lastBackup = backups[0];
-  if (lastBackup && Date.now() - new Date(lastBackup.timestamp).getTime() < 5000) {
-    return;
-  }
   const backup = createBackupObject();
+  
+  if (lastBackup) {
+    const currentState = JSON.stringify({ tracker: backup.tracker, emailDefaults: backup.emailDefaults });
+    const lastState = JSON.stringify({ tracker: lastBackup.tracker, emailDefaults: lastBackup.emailDefaults });
+    if (currentState === lastState) {
+      return;
+    }
+  }
   backups.unshift(backup);
   if (backups.length > MAX_LOCAL_BACKUPS) {
     backups.splice(MAX_LOCAL_BACKUPS);
@@ -940,7 +972,7 @@ function loadBackupsList() {
   const listContainer = document.getElementById('backupsList');
   
   if (backups.length === 0) {
-    listContainer.innerHTML = '<p style="font-size: 12px; color: var(--text-secondary); text-align: center; padding: 20px;">No backups yet. They will be created automatically when you close the app.</p>';
+    listContainer.innerHTML = '<p style="font-size: 12px; color: var(--text-secondary); text-align: center; padding: 20px;">No backups yet. Press <strong>save</strong> to create one.</p>';
     return;
   }
   
@@ -992,18 +1024,17 @@ function closeBackupModal(ev) {
   document.getElementById('backupModal').style.display = 'none';
 }
 
-// Create automatic backup when app is closed
-function setupAutoBackup() {
-  document.addEventListener('visibilitychange', () => {
-    if (document.hidden) {
-      createLocalBackup();
-    }
-  });
+function saveAll() {
+  if (!currentData) return;
+  saveData(currentData);
+  createLocalBackup();
+  const el = document.getElementById('saveToast');
+  el.classList.add('visible');
+  setTimeout(() => el.classList.remove('visible'), 2000);
 }
 
 applyTheme();
 render();
-setupAutoBackup();
 
 if ('serviceWorker' in navigator) {
   try {
